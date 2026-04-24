@@ -1,0 +1,106 @@
+services:
+  patient-mongo:
+    image: mongo:7
+    container_name: patient-mongo
+    restart: unless-stopped
+    ports:
+      - "27018:27017"
+    volumes:
+      - patient_data:/data/db
+
+  doctor-mongo:
+    image: mongo:7
+    container_name: doctor-mongo
+    restart: unless-stopped
+    ports:
+      - "27019:27017"
+    volumes:
+      - doctor_data:/data/db
+
+  appointment-mongo:
+    image: mongo:7
+    container_name: appointment-mongo
+    restart: unless-stopped
+    ports:
+      - "27020:27017"
+    volumes:
+      - appointment_data:/data/db
+
+  notification-mongo:
+    image: mongo:7
+    container_name: notification-mongo
+    restart: unless-stopped
+    ports:
+      - "27021:27017"
+    volumes:
+      - notification_data:/data/db
+
+  patient-service:
+    build: ./patient-service
+    env_file:
+      - ./patient-service/.env
+    depends_on:
+      - patient-mongo
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+
+  doctor-service:
+    build: ./doctor-service
+    env_file:
+      - ./doctor-service/.env
+    depends_on:
+      - doctor-mongo
+    ports:
+      - "5002:5002"
+    restart: unless-stopped
+
+  notification-service:
+    build: ./notification-service
+    env_file:
+      - ./notification-service/.env
+    depends_on:
+      - notification-mongo
+    ports:
+      - "5004:5004"
+    restart: unless-stopped
+
+  appointment-service:
+    build: ./appointment-service
+    env_file:
+      - ./appointment-service/.env
+    depends_on:
+      - appointment-mongo
+      - patient-service
+      - doctor-service
+      - notification-service
+    ports:
+      - "5003:5003"
+    restart: unless-stopped
+
+  api-gateway:
+    build: ./api-gateway
+    env_file:
+      - ./api-gateway/.env
+    depends_on:
+      - patient-service
+      - doctor-service
+      - appointment-service
+      - notification-service
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - api-gateway
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+volumes:
+  patient_data:
+  doctor_data:
+  appointment_data:
+  notification_data:
